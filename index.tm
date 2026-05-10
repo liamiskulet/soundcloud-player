@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoundCloud Free Search Player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-1: #f7f2e9;
+      --bg-2: #e9ddca;
+      --panel: rgba(255, 253, 247, 0.92);
+      --line: rgba(32, 25, 16, 0.16);
+      --text: #21180f;
+      --muted: rgba(33, 24, 15, 0.67);
+      --accent: #ff5b21;
+      --accent-dark: #cf4215;
+      --good: #1a8f57;
+      --shadow: 0 24px 68px rgba(40, 30, 15, 0.18);
+      --radius-xl: 26px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Manrope", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 85% 10%, rgba(255, 91, 33, 0.24), transparent 34%),
+        radial-gradient(circle at 12% 88%, rgba(255, 181, 66, 0.2), transparent 34%),
+        linear-gradient(165deg, var(--bg-1), var(--bg-2));
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(58, 42, 22, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(58, 42, 22, 0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.35;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+
+    .header {
+      padding: 20px 24px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title {
+      margin: 0;
+      font-family: "Syne", sans-serif;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      letter-spacing: 0.02em;
+    }
+
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--good);
+    }
+
+    .section { padding: 12px 24px; }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .proxy-row {
+      margin-top: 8px;
+    }
+
+    input[type="search"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 11px 12px;
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--text);
+      outline: none;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+      font-size: 0.95rem;
+    }
+
+    input[type="search"]:focus {
+      border-color: rgba(255, 91, 33, 0.5);
+      box-shadow: 0 0 0 3px rgba(255, 91, 33, 0.14);
+    }
+
+    button {
+      border: 0;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      padding: 11px 14px;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .now {
+      padding: 4px 24px 12px;
+      display: grid;
+      gap: 2px;
+    }
+
+    .track {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1.05rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .artist {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .seek-wrap {
+      padding: 0 24px 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .time {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .controls {
+      padding: 2px 24px 14px;
+      display: grid;
+      grid-template-columns: auto auto auto 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .control-btn {
+      min-width: 56px;
+      min-height: 42px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    .control-btn:hover,
+    .control-btn:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .vol {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.75);
+    }
+
+    .vol span {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    .status {
+      margin: 0;
+      padding: 0 24px 14px;
+      min-height: 1.2em;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .results-wrap {
+      border-top: 1px solid var(--line);
+      padding: 12px 24px 18px;
+      display: grid;
+      gap: 8px;
+      background: rgba(255, 248, 235, 0.5);
+    }
+
+    .results-head {
+      margin: 0;
+      font-family: "Syne", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .results {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      max-height: 260px;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .result-item {
+      border-bottom: 1px solid rgba(32, 25, 16, 0.09);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .result-item:last-child { border-bottom: 0; }
+
+    .play-result {
+      border: 0;
+      background: transparent;
+      text-align: left;
+      padding: 0;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .play-result:hover,
+    .play-result:focus-visible {
+      color: var(--accent-dark);
+    }
+
+    .line {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .line.sub {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .duration {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .empty {
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    iframe {
+      width: 100%;
+      height: 120px;
+      border: 0;
+      border-top: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    @media (max-width: 780px) {
+      .search-row { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr 1fr; }
+      .vol { grid-column: span 2; }
+      .control-btn, .btn-primary { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1 class="title">SoundCloud Free Search Player</h1>
+      <div class="badge">No URL Pasting</div>
+    </header>
+
+    <section class="section">
+      <div class="search-row">
+        <input id="searchInput" type="search" placeholder="Search songs or artists on SoundCloud">
+        <button id="searchBtn" class="btn-primary" type="button">Search</button>
+      </div>
+      <div class="search-row proxy-row">
+        <input id="proxyInput" type="search" placeholder="Proxy URL (for Cloudflare Worker)">
+        <button id="saveProxyBtn" class="btn-primary" type="button">Save Proxy</button>
+      </div>
+    </section>
+
+    <section class="now">
+      <p id="trackTitle" class="track">No track selected</p>
+      <p id="trackArtist" class="artist">Search and click a result to play</p>
+    </section>
+
+    <section class="seek-wrap">
+      <div class="time">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+      <input id="seek" type="range" min="0" max="1000" value="0">
+    </section>
+
+    <section class="controls">
+      <button id="prevBtn" class="control-btn" type="button">Prev</button>
+      <button id="playPauseBtn" class="control-btn" type="button">Play</button>
+      <button id="nextBtn" class="control-btn" type="button">Next</button>
+      <div class="vol">
+        <span>VOL</span>
+        <input id="volume" type="range" min="0" max="100" value="70">
+      </div>
+    </section>
+
+    <p id="status" class="status">Ready. Search a song name.</p>
+
+    <section class="results-wrap">
+      <p class="results-head">Search Results</p>
+      <ul id="results" class="results"></ul>
+    </section>
+
+    <iframe
+      id="scWidget"
+      allow="autoplay"
+      src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/forss/flickermood&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&visual=false"
+    ></iframe>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+  <script>
+    const PROXY_KEY = 'sc:proxy_base';
+
+    function getSafeStorage() {
+      try {
+        return window.localStorage;
+      } catch {
+        return null;
+      }
+    }
+
+    const safeStorage = getSafeStorage();
+
+    function readStore(key) {
+      return safeStorage ? safeStorage.getItem(key) : null;
+    }
+
+    function writeStore(key, value) {
+      if (safeStorage) safeStorage.setItem(key, value);
+    }
+
+    function normalizeBaseUrl(base) {
+      const raw = String(base || '').trim();
+      if (!raw) return '';
+      return raw.replace(/\/+$/, '');
+    }
+
+    const queryProxy = new URLSearchParams(location.search).get('proxy');
+    const storedProxy = readStore(PROXY_KEY);
+    const fallbackProxy = location.protocol === 'file:' ? 'http://127.0.0.1:8080' : location.origin;
+    let apiBase = normalizeBaseUrl(queryProxy || storedProxy || fallbackProxy);
+
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const proxyInput = document.getElementById('proxyInput');
+    const saveProxyBtn = document.getElementById('saveProxyBtn');
+    const resultsEl = document.getElementById('results');
+
+    const iframe = document.getElementById('scWidget');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const volume = document.getElementById('volume');
+    const seek = document.getElementById('seek');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const statusEl = document.getElementById('status');
+    const trackTitle = document.getElementById('trackTitle');
+    const trackArtist = document.getElementById('trackArtist');
+
+    const audioEl = new Audio();
+    audioEl.preload = 'none';
+    audioEl.volume = Number(volume.value) / 100;
+    iframe.style.display = 'none';
+
+    let hls = null;
+    let isSeeking = false;
+    let currentResults = [];
+    let currentIndex = -1;
+    let isResolvingTrack = false;
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function formatMs(ms) {
+      const s = Math.floor((ms || 0) / 1000);
+      const m = Math.floor(s / 60);
+      const rem = s % 60;
+      return `${m}:${String(rem).padStart(2, '0')}`;
+    }
+
+    function resetProgress() {
+      seek.value = '0';
+      currentTimeEl.textContent = '0:00';
+      durationEl.textContent = '0:00';
+      playPauseBtn.textContent = 'Play';
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function cleanupHls() {
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
+    }
+
+    function getTranscodingCandidates(track) {
+      const transcodings = (track && track.media && Array.isArray(track.media.transcodings))
+        ? track.media.transcodings
+        : [];
+
+      const progressive = transcodings.filter((t) => t && t.format && t.format.protocol === 'progressive');
+      const hlsTracks = transcodings.filter((t) => t && t.format && t.format.protocol === 'hls');
+      return [...progressive, ...hlsTracks];
+    }
+
+    async function resolveStreamUrl(transcodingUrl) {
+      const url = `${apiBase}/api/resolve-stream?url=${encodeURIComponent(transcodingUrl)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`stream resolve failed (${res.status})`);
+      }
+      return res.json();
+    }
+
+    async function mountStream(track) {
+      const candidates = getTranscodingCandidates(track);
+      if (candidates.length === 0) {
+        throw new Error('No stream candidates for this track');
+      }
+
+      cleanupHls();
+      audioEl.pause();
+      audioEl.src = '';
+      audioEl.load();
+      resetProgress();
+
+      let lastError = null;
+      for (const candidate of candidates) {
+        try {
+          const resolved = await resolveStreamUrl(candidate.url);
+          const streamUrl = resolved.url;
+          const protocol = candidate.format.protocol;
+
+          if (protocol === 'hls') {
+            if (audioEl.canPlayType('application/vnd.apple.mpegurl')) {
+              audioEl.src = streamUrl;
+            } else if (window.Hls && window.Hls.isSupported()) {
+              hls = new Hls();
+              hls.loadSource(streamUrl);
+              hls.attachMedia(audioEl);
+            } else {
+              throw new Error('HLS not supported in this browser');
+            }
+          } else {
+            audioEl.src = streamUrl;
+          }
+
+          return;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      throw lastError || new Error('Could not mount any stream');
+    }
+
+    function renderResults(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        resultsEl.innerHTML = '<li class="empty">No playable results found.</li>';
+        return;
+      }
+
+      resultsEl.innerHTML = '';
+      items.forEach((track, index) => {
+        const li = document.createElement('li');
+        li.className = 'result-item';
+
+        const btn = document.createElement('button');
+        btn.className = 'play-result';
+        btn.type = 'button';
+
+        const title = track.title || 'Untitled track';
+        const artist = track.user && track.user.username ? track.user.username : 'Unknown artist';
+
+        btn.innerHTML = `<span class="line">${escapeHtml(title)}</span><span class="line sub">${escapeHtml(artist)}</span>`;
+        btn.addEventListener('click', () => playTrackByIndex(index));
+
+        const dur = document.createElement('span');
+        dur.className = 'duration';
+        dur.textContent = formatMs(track.duration || 0);
+
+        li.append(btn, dur);
+        resultsEl.appendChild(li);
+      });
+    }
+
+    async function playTrackByIndex(index) {
+      if (isResolvingTrack) return;
+      if (index < 0 || index >= currentResults.length) return;
+
+      const track = currentResults[index];
+      currentIndex = index;
+      isResolvingTrack = true;
+
+      const title = track.title || 'Untitled track';
+      const artist = track.user && track.user.username ? track.user.username : 'Unknown artist';
+      trackTitle.textContent = title;
+      trackArtist.textContent = artist;
+      setStatus(`Loading ${title}...`);
+
+      try {
+        await mountStream(track);
+        await audioEl.play();
+        setStatus('Playing');
+      } catch (error) {
+        setStatus(`Play failed: ${error.message}. Try another result.`);
+        playPauseBtn.textContent = 'Play';
+      } finally {
+        isResolvingTrack = false;
+      }
+    }
+
+    async function searchTracks() {
+      const q = searchInput.value.trim();
+      if (!q) {
+        setStatus('Type a song name first.');
+        return;
+      }
+
+      setStatus('Searching SoundCloud...');
+      const url = `${apiBase}/api/search?q=${encodeURIComponent(q)}&limit=30`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`search failed (${res.status})`);
+
+        const data = await res.json();
+        const list = Array.isArray(data.collection) ? data.collection : [];
+        const playable = list.filter((t) =>
+          t &&
+          t.media &&
+          Array.isArray(t.media.transcodings) &&
+          t.media.transcodings.length > 0
+        );
+
+        currentResults = playable;
+        currentIndex = -1;
+        renderResults(playable);
+        setStatus(`Found ${playable.length} result${playable.length === 1 ? '' : 's'}.`);
+      } catch (error) {
+        setStatus(`Search error: ${error.message}. Check proxy URL.`);
+      }
+    }
+
+    audioEl.addEventListener('play', () => {
+      playPauseBtn.textContent = 'Pause';
+      setStatus('Playing');
+    });
+
+    audioEl.addEventListener('pause', () => {
+      playPauseBtn.textContent = 'Play';
+    });
+
+    audioEl.addEventListener('ended', () => {
+      if (currentIndex >= 0 && currentIndex < currentResults.length - 1) {
+        playTrackByIndex(currentIndex + 1);
+      } else {
+        setStatus('Track finished');
+      }
+    });
+
+    audioEl.addEventListener('timeupdate', () => {
+      if (isSeeking) return;
+      currentTimeEl.textContent = formatMs(audioEl.currentTime * 1000);
+      if (Number.isFinite(audioEl.duration) && audioEl.duration > 0) {
+        seek.value = String(Math.round((audioEl.currentTime / audioEl.duration) * 1000));
+      }
+    });
+
+    audioEl.addEventListener('loadedmetadata', () => {
+      if (Number.isFinite(audioEl.duration)) {
+        durationEl.textContent = formatMs(audioEl.duration * 1000);
+      }
+    });
+
+    audioEl.addEventListener('error', () => {
+      setStatus('Audio playback error. Try another result.');
+    });
+
+    searchBtn.addEventListener('click', searchTracks);
+    searchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') searchTracks();
+    });
+
+    saveProxyBtn.addEventListener('click', () => {
+      const candidate = normalizeBaseUrl(proxyInput.value);
+      if (!candidate) {
+        setStatus('Proxy URL cannot be empty.');
+        return;
+      }
+
+      apiBase = candidate;
+      writeStore(PROXY_KEY, apiBase);
+      setStatus(`Proxy saved: ${apiBase}`);
+    });
+
+    playPauseBtn.addEventListener('click', async () => {
+      if (isResolvingTrack) return;
+      if (!audioEl.src && currentResults.length > 0 && currentIndex === -1) {
+        await playTrackByIndex(0);
+        return;
+      }
+      if (!audioEl.src) {
+        setStatus('Search and choose a track first.');
+        return;
+      }
+      if (audioEl.paused) {
+        try {
+          await audioEl.play();
+        } catch (error) {
+          setStatus(`Press Play again: ${error.message}`);
+        }
+      } else {
+        audioEl.pause();
+      }
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) playTrackByIndex(currentIndex - 1);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex >= 0 && currentIndex < currentResults.length - 1) {
+        playTrackByIndex(currentIndex + 1);
+      }
+    });
+
+    volume.addEventListener('input', () => {
+      audioEl.volume = Number(volume.value) / 100;
+    });
+
+    seek.addEventListener('pointerdown', () => {
+      isSeeking = true;
+    });
+
+    seek.addEventListener('pointerup', () => {
+      if (Number.isFinite(audioEl.duration) && audioEl.duration > 0) {
+        audioEl.currentTime = (Number(seek.value) / 1000) * audioEl.duration;
+      }
+      isSeeking = false;
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space' && document.activeElement !== searchInput) {
+        event.preventDefault();
+        playPauseBtn.click();
+      }
+    });
+
+    renderResults([]);
+    proxyInput.value = apiBase;
+    setStatus('Ready. Search and click a track.');
+  </script>
+</body>
+</html>
